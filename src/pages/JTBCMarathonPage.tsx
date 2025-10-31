@@ -378,11 +378,14 @@ export default function JTBCMarathonPage() {
       <div className="bg-gradient-to-r from-lime-100 via-green-50 to-emerald-100 p-4 sticky top-0 z-50 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-green-900">2025 JTBC 마라톤</h1>
+            <h1 className="text-2xl font-bold text-green-900">
+              2025<br />JTBC 마라톤
+            </h1>
             <p className="text-sm text-green-800 mt-1">선수별 실시간 기록 조회</p>
           </div>
-          <div className="bg-gradient-to-r from-lime-500 to-green-500 text-white px-4 py-2 rounded-full font-bold text-lg shadow-md">
-            목동 마라톤 교실 화이팅!
+          <div
+              className="bg-gradient-to-r from-lime-500 to-green-500 text-white px-4 py-2 rounded-full font-bold text-lg shadow-md">
+            목동 마라톤 교실<br /> 화이팅!
           </div>
         </div>
       </div>
