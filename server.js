@@ -1,68 +1,93 @@
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
+import pg from 'pg';
+
+const { Pool } = pg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const RUNNERS_FILE = path.join(__dirname, 'runners.json');
+
+// PostgreSQL 연결 설정
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
+// 데이터베이스 연결 테스트
+pool.connect((err, client, release) => {
+  if (err) {
+    console.error('Error connecting to database:', err.stack);
+  } else {
+    console.log('Database connected successfully');
+    release();
+  }
+});
 
 // JSON 파싱 미들웨어
 app.use(express.json());
 
-// 선수 데이터 읽기
-function readRunners() {
-  try {
-    if (fs.existsSync(RUNNERS_FILE)) {
-      const data = fs.readFileSync(RUNNERS_FILE, 'utf8');
-      return JSON.parse(data);
-    }
-  } catch (error) {
-    console.error('Failed to read runners:', error);
-  }
-  return [];
-}
-
-// 선수 데이터 저장
-function writeRunners(runners) {
-  try {
-    fs.writeFileSync(RUNNERS_FILE, JSON.stringify(runners, null, 2), 'utf8');
-    return true;
-  } catch (error) {
-    console.error('Failed to write runners:', error);
-    return false;
-  }
-}
-
 // 헬스체크 엔드포인트
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Database connection failed' });
+  }
 });
 
 // 선수 목록 조회
-app.get('/api/runners', (req, res) => {
-  const runners = readRunners();
-  res.json(runners);
+app.get('/api/runners', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT bib_number as "bibNumber", name, password FROM runners ORDER BY created_at DESC'
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Failed to fetch runners:', error);
+    res.status(500).json({ error: 'Failed to fetch runners' });
+  }
 });
 
 // 선수 추가
-app.post('/api/runners', (req, res) => {
-  const newRunner = req.body;
-  const runners = readRunners();
-  runners.push(newRunner);
+app.post('/api/runners', async (req, res) => {
+  const { bibNumber, name, password } = req.body;
 
-  if (writeRunners(runners)) {
-    res.status(201).json(newRunner);
-  } else {
+  if (!bibNumber || !name || !password) {
+    return res.status(400).json({ error: '모든 필드를 입력해주세요' });
+  }
+
+  try {
+    // 중복 체크
+    const existing = await pool.query(
+      'SELECT bib_number FROM runners WHERE bib_number = $1',
+      [bibNumber]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ error: '이미 등록된 배번입니다' });
+    }
+
+    // 선수 추가
+    const result = await pool.query(
+      'INSERT INTO runners (bib_number, name, password) VALUES ($1, $2, $3) RETURNING bib_number as "bibNumber", name, password',
+      [bibNumber, name, password]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Failed to add runner:', error);
     res.status(500).json({ error: 'Failed to save runner' });
   }
 });
 
 // 선수 삭제
-app.delete('/api/runners/:bibNumber', (req, res) => {
+app.delete('/api/runners/:bibNumber', async (req, res) => {
   const { bibNumber } = req.params;
   const { password } = req.body;
   const ADMIN_PASSWORD = '8282';
@@ -71,23 +96,30 @@ app.delete('/api/runners/:bibNumber', (req, res) => {
     return res.status(400).json({ error: '비밀번호를 입력해주세요' });
   }
 
-  const runners = readRunners();
-  const runner = runners.find(r => r.bibNumber === bibNumber);
+  try {
+    // 선수 조회
+    const result = await pool.query(
+      'SELECT bib_number, name, password FROM runners WHERE bib_number = $1',
+      [bibNumber]
+    );
 
-  if (!runner) {
-    return res.status(404).json({ error: '선수를 찾을 수 없습니다' });
-  }
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: '선수를 찾을 수 없습니다' });
+    }
 
-  // 관리자 비밀번호 또는 선수 비밀번호 확인
-  if (password !== ADMIN_PASSWORD && runner.password !== password) {
-    return res.status(403).json({ error: '비밀번호가 일치하지 않습니다' });
-  }
+    const runner = result.rows[0];
 
-  const filteredRunners = runners.filter(r => r.bibNumber !== bibNumber);
+    // 관리자 비밀번호 또는 선수 비밀번호 확인
+    if (password !== ADMIN_PASSWORD && runner.password !== password) {
+      return res.status(403).json({ error: '비밀번호가 일치하지 않습니다' });
+    }
 
-  if (writeRunners(filteredRunners)) {
+    // 선수 삭제
+    await pool.query('DELETE FROM runners WHERE bib_number = $1', [bibNumber]);
+
     res.json({ success: true });
-  } else {
+  } catch (error) {
+    console.error('Failed to delete runner:', error);
     res.status(500).json({ error: 'Failed to delete runner' });
   }
 });
