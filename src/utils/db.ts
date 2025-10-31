@@ -7,7 +7,7 @@ export async function initDB(): Promise<Database> {
   if (db) return db;
 
   const SQL = await initSqlJs({
-    locateFile: (file) => `https://sql.js.org/dist/${file}`,
+    locateFile: (file: string) => `https://sql.js.org/dist/${file}`,
   });
 
   // 로컬 스토리지에서 기존 데이터베이스 로드

@@ -162,7 +162,7 @@ export function addRunner(runner: Runner) {
   const db = getDB();
   db.run(
     'INSERT INTO runners (id, name, bibNumber, groupId, currentDistance, currentPace, estimatedFinishTime) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [runner.id, runner.name, runner.bibNumber, runner.groupId, runner.currentDistance, runner.currentPace, runner.estimatedFinishTime]
+    [runner.id, runner.name, runner.bibNumber, runner.groupId, runner.currentDistance, runner.currentPace ?? null, runner.estimatedFinishTime ?? null]
   );
 
   // 그룹의 멤버 수 증가

@@ -21,7 +21,7 @@ interface StoreState {
   deleteRunner: (runnerId: string, groupId: string) => void;
 }
 
-export const useStore = create<StoreState>((set, get) => ({
+export const useStore = create<StoreState>((set) => ({
   dbReady: false,
   races: [],
   groups: [],
