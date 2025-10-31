@@ -22,6 +22,7 @@ interface ProcessedRecord {
 interface RunnerInfo {
   name: string;
   bibNumber: string;
+  password: string;
   lastRecord?: ProcessedRecord;
   allRecords: ProcessedRecord[];
 }
@@ -34,6 +35,7 @@ export default function JTBCMarathonPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [runnerName, setRunnerName] = useState('');
   const [bibNumber, setBibNumber] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -144,6 +146,11 @@ export default function JTBCMarathonPage() {
       return;
     }
 
+    if (!password.trim() || !/^\d{4}$/.test(password.trim())) {
+      alert('4자리 숫자 비밀번호를 입력해주세요');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -157,6 +164,7 @@ export default function JTBCMarathonPage() {
       const newRunner: RunnerInfo = {
         name: runnerName.trim(),
         bibNumber: bibNumber.trim(),
+        password: password.trim(),
         lastRecord: data.lastRecord,
         allRecords: data.records,
       };
@@ -172,6 +180,7 @@ export default function JTBCMarathonPage() {
         setRunners([...runners, newRunner]);
         setRunnerName('');
         setBibNumber('');
+        setPassword('');
         setShowAddModal(false);
       } else {
         alert('선수 저장에 실패했습니다.');
@@ -185,21 +194,34 @@ export default function JTBCMarathonPage() {
   };
 
   const handleDeleteRunner = async (bibNumber: string, name: string) => {
-    if (confirm(`${name} 선수를 삭제하시겠습니까?`)) {
-      try {
-        const response = await fetch(`/api/runners/${bibNumber}`, {
-          method: 'DELETE',
-        });
+    const inputPassword = prompt(`${name} 선수 삭제\n\n등록 시 설정한 4자리 비밀번호를 입력하세요:`);
 
-        if (response.ok) {
-          setRunners(runners.filter((r) => r.bibNumber !== bibNumber));
-        } else {
-          alert('선수 삭제에 실패했습니다.');
-        }
-      } catch (error) {
-        console.error('선수 삭제 실패:', error);
-        alert('선수 삭제에 실패했습니다.');
+    if (inputPassword === null) {
+      return; // 취소
+    }
+
+    if (!inputPassword || !/^\d{4}$/.test(inputPassword)) {
+      alert('4자리 숫자 비밀번호를 입력해주세요');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/runners/${bibNumber}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: inputPassword }),
+      });
+
+      if (response.ok) {
+        setRunners(runners.filter((r) => r.bibNumber !== bibNumber));
+        alert('선수가 삭제되었습니다.');
+      } else {
+        const error = await response.json();
+        alert(error.error || '선수 삭제에 실패했습니다.');
       }
+    } catch (error) {
+      console.error('선수 삭제 실패:', error);
+      alert('선수 삭제에 실패했습니다.');
     }
   };
 
@@ -523,6 +545,27 @@ export default function JTBCMarathonPage() {
                   </span>
                 </label>
               </div>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">비밀번호 *</span>
+                </label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={4}
+                  placeholder="4자리 숫자"
+                  className="input input-bordered w-full"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value.replace(/\D/g, ''))}
+                  disabled={loading}
+                />
+                <label className="label">
+                  <span className="label-text-alt text-neutral-content opacity-70">
+                    선수 삭제 시 필요한 4자리 숫자 비밀번호
+                  </span>
+                </label>
+              </div>
             </div>
             <div className="modal-action">
               <button
@@ -531,6 +574,7 @@ export default function JTBCMarathonPage() {
                   setShowAddModal(false);
                   setRunnerName('');
                   setBibNumber('');
+                  setPassword('');
                 }}
                 disabled={loading}
               >

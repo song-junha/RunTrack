@@ -64,7 +64,23 @@ app.post('/api/runners', (req, res) => {
 // 선수 삭제
 app.delete('/api/runners/:bibNumber', (req, res) => {
   const { bibNumber } = req.params;
+  const { password } = req.body;
+
+  if (!password) {
+    return res.status(400).json({ error: '비밀번호를 입력해주세요' });
+  }
+
   const runners = readRunners();
+  const runner = runners.find(r => r.bibNumber === bibNumber);
+
+  if (!runner) {
+    return res.status(404).json({ error: '선수를 찾을 수 없습니다' });
+  }
+
+  if (runner.password !== password) {
+    return res.status(403).json({ error: '비밀번호가 일치하지 않습니다' });
+  }
+
   const filteredRunners = runners.filter(r => r.bibNumber !== bibNumber);
 
   if (writeRunners(filteredRunners)) {
