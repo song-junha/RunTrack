@@ -171,33 +171,6 @@ export default function JTBCMarathonPage() {
     }
   };
 
-  const handleRefresh = async (bibNumber: string) => {
-    const runnerIndex = runners.findIndex((r) => r.bibNumber === bibNumber);
-    if (runnerIndex === -1) return;
-
-    const runner = runners[runnerIndex];
-    setLoading(true);
-
-    try {
-      const data = await fetchRunnerData(runner.bibNumber);
-
-      if (data) {
-        const updatedRunners = [...runners];
-        updatedRunners[runnerIndex] = {
-          ...runner,
-          lastRecord: data.lastRecord,
-          allRecords: data.records,
-        };
-        setRunners(updatedRunners);
-      }
-    } catch (error) {
-      console.error('기록 갱신 실패:', error);
-      alert('기록 갱신에 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDeleteRunner = (bibNumber: string, name: string) => {
     if (confirm(`${name} 선수를 삭제하시겠습니까?`)) {
       setRunners(runners.filter((r) => r.bibNumber !== bibNumber));
