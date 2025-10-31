@@ -8,6 +8,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// 헬스체크 엔드포인트
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // API 프록시 (CORS 우회)
 app.get('/api/event/:eventId/player/:bibNumber', async (req, res) => {
   const { eventId, bibNumber } = req.params;
