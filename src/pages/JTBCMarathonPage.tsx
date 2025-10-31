@@ -39,6 +39,9 @@ export default function JTBCMarathonPage() {
   const [loading, setLoading] = useState(false);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+  const [startY, setStartY] = useState(0);
 
   // 서버에서 선수 목록 로드
   useEffect(() => {
@@ -55,6 +58,33 @@ export default function JTBCMarathonPage() {
     };
     loadRunners();
   }, []);
+
+  // Pull-to-refresh 이벤트
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY === 0) {
+      setStartY(e.touches[0].clientY);
+      setIsPulling(true);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isPulling || window.scrollY > 0) return;
+
+    const currentY = e.touches[0].clientY;
+    const distance = currentY - startY;
+
+    if (distance > 0) {
+      setPullDistance(Math.min(distance, 100));
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (pullDistance > 60) {
+      await handleRefreshAll();
+    }
+    setIsPulling(false);
+    setPullDistance(0);
+  };
 
   const timeToSeconds = (timeStr: string): number => {
     const parts = timeStr.split(':');
@@ -324,7 +354,27 @@ export default function JTBCMarathonPage() {
   const sortedRunners = getSortedRunners();
 
   return (
-    <div className="min-h-screen bg-base-100">
+    <div
+      className="min-h-screen bg-base-100"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull-to-refresh indicator */}
+      {pullDistance > 0 && (
+        <div
+          className="fixed top-0 left-0 right-0 flex items-center justify-center bg-green-100 transition-all"
+          style={{
+            height: `${pullDistance}px`,
+            opacity: pullDistance / 100
+          }}
+        >
+          <div className="text-green-700 font-bold text-sm">
+            {pullDistance > 60 ? '↓ 놓으면 새로고침' : '↓ 당겨서 새로고침'}
+          </div>
+        </div>
+      )}
+
       <div className="bg-gradient-to-r from-lime-100 via-green-50 to-emerald-100 p-4 sticky top-0 z-50 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
