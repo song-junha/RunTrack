@@ -1,16 +1,77 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const RUNNERS_FILE = path.join(__dirname, 'runners.json');
+
+// JSON 파싱 미들웨어
+app.use(express.json());
+
+// 선수 데이터 읽기
+function readRunners() {
+  try {
+    if (fs.existsSync(RUNNERS_FILE)) {
+      const data = fs.readFileSync(RUNNERS_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Failed to read runners:', error);
+  }
+  return [];
+}
+
+// 선수 데이터 저장
+function writeRunners(runners) {
+  try {
+    fs.writeFileSync(RUNNERS_FILE, JSON.stringify(runners, null, 2), 'utf8');
+    return true;
+  } catch (error) {
+    console.error('Failed to write runners:', error);
+    return false;
+  }
+}
 
 // 헬스체크 엔드포인트
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// 선수 목록 조회
+app.get('/api/runners', (req, res) => {
+  const runners = readRunners();
+  res.json(runners);
+});
+
+// 선수 추가
+app.post('/api/runners', (req, res) => {
+  const newRunner = req.body;
+  const runners = readRunners();
+  runners.push(newRunner);
+
+  if (writeRunners(runners)) {
+    res.status(201).json(newRunner);
+  } else {
+    res.status(500).json({ error: 'Failed to save runner' });
+  }
+});
+
+// 선수 삭제
+app.delete('/api/runners/:bibNumber', (req, res) => {
+  const { bibNumber } = req.params;
+  const runners = readRunners();
+  const filteredRunners = runners.filter(r => r.bibNumber !== bibNumber);
+
+  if (writeRunners(filteredRunners)) {
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ error: 'Failed to delete runner' });
+  }
 });
 
 // API 프록시 (CORS 우회)

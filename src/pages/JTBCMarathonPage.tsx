@@ -30,17 +30,7 @@ type SortField = 'name' | 'bibNumber' | 'checkpoint' | 'time' | 'split' | 'cumul
 type SortDirection = 'asc' | 'desc';
 
 export default function JTBCMarathonPage() {
-  const STORAGE_KEY = 'jtbc-marathon-runners';
-
-  const [runners, setRunners] = useState<RunnerInfo[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
+  const [runners, setRunners] = useState<RunnerInfo[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [runnerName, setRunnerName] = useState('');
   const [bibNumber, setBibNumber] = useState('');
@@ -48,9 +38,21 @@ export default function JTBCMarathonPage() {
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
+  // 서버에서 선수 목록 로드
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(runners));
-  }, [runners]);
+    const loadRunners = async () => {
+      try {
+        const response = await fetch('/api/runners');
+        if (response.ok) {
+          const data = await response.json();
+          setRunners(data);
+        }
+      } catch (error) {
+        console.error('Failed to load runners:', error);
+      }
+    };
+    loadRunners();
+  }, []);
 
   const timeToSeconds = (timeStr: string): number => {
     const parts = timeStr.split(':');
@@ -159,10 +161,21 @@ export default function JTBCMarathonPage() {
         allRecords: data.records,
       };
 
-      setRunners([...runners, newRunner]);
-      setRunnerName('');
-      setBibNumber('');
-      setShowAddModal(false);
+      // 서버에 저장
+      const saveResponse = await fetch('/api/runners', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRunner),
+      });
+
+      if (saveResponse.ok) {
+        setRunners([...runners, newRunner]);
+        setRunnerName('');
+        setBibNumber('');
+        setShowAddModal(false);
+      } else {
+        alert('선수 저장에 실패했습니다.');
+      }
     } catch (error) {
       console.error('선수 추가 실패:', error);
       alert('선수 추가에 실패했습니다. 다시 시도해주세요.');
@@ -171,9 +184,22 @@ export default function JTBCMarathonPage() {
     }
   };
 
-  const handleDeleteRunner = (bibNumber: string, name: string) => {
+  const handleDeleteRunner = async (bibNumber: string, name: string) => {
     if (confirm(`${name} 선수를 삭제하시겠습니까?`)) {
-      setRunners(runners.filter((r) => r.bibNumber !== bibNumber));
+      try {
+        const response = await fetch(`/api/runners/${bibNumber}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          setRunners(runners.filter((r) => r.bibNumber !== bibNumber));
+        } else {
+          alert('선수 삭제에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('선수 삭제 실패:', error);
+        alert('선수 삭제에 실패했습니다.');
+      }
     }
   };
 
