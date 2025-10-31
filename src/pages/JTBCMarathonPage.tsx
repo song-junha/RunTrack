@@ -339,9 +339,9 @@ export default function JTBCMarathonPage() {
         )}
       </div>
 
-      <div className="p-4 space-y-2">
+      <div className="p-2 space-y-1.5">
         {runners.length > 0 && (
-          <div className="bg-yellow-100 rounded-lg p-3 flex items-center gap-2 text-xs font-bold text-amber-900">
+          <div className="bg-yellow-100 rounded-lg p-2 flex items-center gap-1 text-xs font-bold text-amber-900">
             <div
               className="flex-1 min-w-0 cursor-pointer hover:text-orange-600 transition-colors"
               onClick={() => handleSort('name')}
@@ -349,76 +349,76 @@ export default function JTBCMarathonPage() {
               이름/배번 <SortIcon field="name" />
             </div>
             <div
-              className="w-12 text-center cursor-pointer hover:text-orange-600 transition-colors"
+              className="w-10 text-center cursor-pointer hover:text-orange-600 transition-colors"
               onClick={() => handleSort('checkpoint')}
             >
               구간 <SortIcon field="checkpoint" />
             </div>
             <div
-              className="w-16 text-center cursor-pointer hover:text-orange-600 transition-colors"
+              className="w-14 text-center cursor-pointer hover:text-orange-600 transition-colors"
               onClick={() => handleSort('time')}
             >
-              통과시간 <SortIcon field="time" />
+              통과 <SortIcon field="time" />
             </div>
             <div
-              className="w-20 text-center cursor-pointer hover:text-orange-600 transition-colors"
+              className="w-16 text-center cursor-pointer hover:text-orange-600 transition-colors"
               onClick={() => handleSort('split')}
             >
-              구간기록 <SortIcon field="split" />
+              구간 <SortIcon field="split" />
             </div>
             <div
-              className="w-20 text-center cursor-pointer hover:text-orange-600 transition-colors"
+              className="w-16 text-center cursor-pointer hover:text-orange-600 transition-colors"
               onClick={() => handleSort('cumulative')}
             >
-              누적기록 <SortIcon field="cumulative" />
+              누적 <SortIcon field="cumulative" />
             </div>
-            <div className="w-8"></div>
+            <div className="w-6"></div>
           </div>
         )}
 
         {sortedRunners.map((runner, index) => (
           <div
             key={index}
-            className="bg-amber-50 shadow-md rounded-lg p-3 border-2 border-yellow-200 hover:border-yellow-300 transition-colors flex items-center gap-2 text-sm"
+            className="bg-amber-50 shadow-md rounded-lg p-2 border-2 border-yellow-200 hover:border-yellow-300 transition-colors flex items-center gap-1 text-sm"
           >
             <div className="flex-1 min-w-0">
-              <span className="font-bold text-amber-900">{runner.name}</span>
-              <span className="text-amber-700 ml-2 text-xs">#{runner.bibNumber}</span>
+              <span className="font-bold text-amber-900 text-sm">{runner.name}</span>
+              <span className="text-amber-700 ml-1 text-xs">#{runner.bibNumber}</span>
             </div>
 
             {runner.lastRecord ? (
               <>
-                <div className="w-12 text-center">
-                  <div className="badge bg-orange-500 text-white border-0 badge-sm">{runner.lastRecord.name}</div>
+                <div className="w-10 text-center">
+                  <div className="badge bg-orange-500 text-white border-0 badge-xs">{runner.lastRecord.name}</div>
                 </div>
-                <div className="w-16 text-center text-xs font-semibold text-amber-900">
-                  {runner.lastRecord.time_point.split('.')[0]}
+                <div className="w-14 text-center text-xs font-semibold text-amber-900">
+                  {runner.lastRecord.time_point.split('.')[0].substring(0, 5)}
                 </div>
-                <div className="w-20 text-center text-xs text-orange-600 font-semibold">
+                <div className="w-16 text-center text-xs text-orange-600 font-semibold">
                   {runner.lastRecord.split_time}
                 </div>
-                <div className="w-20 text-center text-xs text-amber-700 font-semibold">
+                <div className="w-16 text-center text-xs text-amber-700 font-semibold">
                   {runner.lastRecord.cumulative_time}
                 </div>
               </>
             ) : (
               <>
-                <div className="w-12 text-center text-xs text-neutral-content opacity-50">-</div>
+                <div className="w-10 text-center text-xs text-neutral-content opacity-50">-</div>
+                <div className="w-14 text-center text-xs text-neutral-content opacity-50">-</div>
                 <div className="w-16 text-center text-xs text-neutral-content opacity-50">-</div>
-                <div className="w-20 text-center text-xs text-neutral-content opacity-50">-</div>
-                <div className="w-20 text-center text-xs text-neutral-content opacity-50">-</div>
+                <div className="w-16 text-center text-xs text-neutral-content opacity-50">-</div>
               </>
             )}
 
-            <div className="w-8 flex justify-end">
+            <div className="w-6 flex justify-end">
               <button
-                className="btn btn-xs btn-ghost text-error"
+                className="btn btn-xs btn-ghost text-error p-0 min-h-0 h-6 w-6"
                 onClick={() => handleDeleteRunner(runner.bibNumber, runner.name)}
                 title="삭제"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
+                  className="h-3 w-3"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
