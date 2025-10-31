@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-base-100 text-neutral;
+  }
+}
+
+@layer components {
+  .container-safe {
+    @apply max-w-md mx-auto px-4;
+  }
+}
