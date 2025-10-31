@@ -65,6 +65,7 @@ app.post('/api/runners', (req, res) => {
 app.delete('/api/runners/:bibNumber', (req, res) => {
   const { bibNumber } = req.params;
   const { password } = req.body;
+  const ADMIN_PASSWORD = '8282';
 
   if (!password) {
     return res.status(400).json({ error: '비밀번호를 입력해주세요' });
@@ -77,7 +78,8 @@ app.delete('/api/runners/:bibNumber', (req, res) => {
     return res.status(404).json({ error: '선수를 찾을 수 없습니다' });
   }
 
-  if (runner.password !== password) {
+  // 관리자 비밀번호 또는 선수 비밀번호 확인
+  if (password !== ADMIN_PASSWORD && runner.password !== password) {
     return res.status(403).json({ error: '비밀번호가 일치하지 않습니다' });
   }
 
